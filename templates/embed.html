@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Embed</title>
+    
+    <meta property="og:image" content="{{ embed.thumbnail }}">
+    <meta property="og:type" content="video.other">
+    <meta property="og:video:url" content="{{ embed.file }}">
+    <meta property="og:video:width" content="{{ embed.width }}">
+    <meta property="og:video:height" content="{{ embed.height }}">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+</head>
+<body class="bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 flex flex-col gap-4 items-center justify-center min-h-screen p-5 font-sans transition-colors duration-200">
+    <div class="max-w-3xl w-full bg-white dark:bg-zinc-800 rounded-lg shadow-md p-8 border border-zinc-200 dark:border-zinc-700">
+        <div class="flex justify-between items-center mb-5">
+            <h1 class="text-xl font-bold">Discord Embed</h1>
+            <label class="inline-flex items-center cursor-pointer">
+                <span class="mr-2 text-sm">🌙</span>
+                <div class="relative">
+                    <input type="checkbox" id="darkModeToggle" class="sr-only">
+                    <div class="w-10 h-5 bg-zinc-200 dark:bg-zinc-700 rounded-full"></div>
+                    <div class="dot absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out dark:transform dark:translate-x-5"></div>
+                </div>
+            </label>
+        </div>
+        
+        <div class="mb-5 w-full">
+            <video class="w-full rounded-md" crossorigin="" controls="" poster="{{ embed.thumbnail }}">
+                <source src="{{ embed.file }}">
+            </video>
+        </div>
+        
+        <div class="mt-6 text-zinc-600 dark:text-zinc-400">
+            <p class="mb-3">Share this URL in Discord to embed this video:</p>
+            <div class="bg-zinc-100 dark:bg-zinc-700 p-3 rounded-md font-mono break-all">{{ request.url }}</div>
+        </div>
+    </div>
+    <span>made w/ love by <a href="https://github.com/varunaditya-plus" class="text-red-400">varunaditya</a></span>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            if (localStorage.getItem('darkMode') === 'true' || 
+                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                darkModeToggle.checked = true;
+            } else {
+                document.documentElement.classList.remove('dark');
+                darkModeToggle.checked = false;
+            }
+            
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('darkMode', 'true');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('darkMode', 'false');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

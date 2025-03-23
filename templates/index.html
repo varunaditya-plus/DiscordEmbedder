@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Video Embedder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen w-screen flex flex-col gap-4 items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-200">
+    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-sm p-6 border border-zinc-200 dark:border-zinc-700 min-w-[40rem]">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Discord Video Embedder</h1>
+            <label class="inline-flex items-center cursor-pointer">
+                <span class="mr-2 text-sm">🌙</span>
+                <div class="relative">
+                    <input type="checkbox" id="darkModeToggle" class="sr-only">
+                    <div class="w-10 h-5 bg-zinc-200 dark:bg-zinc-700 rounded-full"></div>
+                    <div class="dot absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out dark:transform dark:translate-x-5"></div>
+                </div>
+            </label>
+        </div>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div id="fileInputWrapper" class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-md p-6 text-center mb-4 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors">
+                <input type="file" id="fileInput" accept="video/*" required class="hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2 text-zinc-400 dark:text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                <p class="text-sm text-zinc-500 dark:text-zinc-400">Drag and drop your video here or click to browse</p>
+                <p id="fileNameDisplay" class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">No file selected</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Thumbnail</label>
+                <div class="flex gap-4 mb-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="thumbnailType" id="thumbnailTypeUrl" checked class="mr-2">
+                        <span>URL</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="thumbnailType" id="thumbnailTypeFile" class="mr-2">
+                        <span>Upload File</span>
+                    </label>
+                </div>
+                
+                <div id="thumbnailUrlGroup">
+                    <input type="text" id="thumbnailUrl" placeholder="Enter your thumbnail url here" value="https://cdn.nfp.is/av1/empty.png" class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 bg-white dark:bg-zinc-800">
+                </div>
+                
+                <div id="thumbnailFileGroup" class="hidden">
+                    <div id="thumbnailFileWrapper" class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-md p-6 text-center cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors">
+                        <input type="file" id="thumbnailFile" accept="image/*" class="hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-2 text-zinc-400 dark:text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Upload thumbnail image</p>
+                        <p id="thumbnailFileNameDisplay" class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">No file selected</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Video Dimensions</label>
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="text-xs text-zinc-500 dark:text-zinc-400">Width</label>
+                        <input type="number" id="videoWidth" value="1280" min="1" class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 bg-white dark:bg-zinc-800">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-xs text-zinc-500 dark:text-zinc-400">Height</label>
+                        <input type="number" id="videoHeight" value="720" min="1" class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 bg-white dark:bg-zinc-800">
+                    </div>
+                </div>
+            </div>
+            
+            <button id="submitBtn" type="submit" class="w-full bg-zinc-900 dark:bg-zinc-700 text-white font-medium py-2 px-4 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors">
+                Upload Video
+            </button>
+        </form>
+        
+        <div id="response" class="mt-4"></div>
+    </div>
+
+    <span>made w/ love by <a href="https://github.com/varunaditya-plus" class="text-red-400">varunaditya</a></span>
+
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            if (localStorage.getItem('darkMode') === 'true' || 
+                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                darkModeToggle.checked = true;
+            } else {
+                document.documentElement.classList.remove('dark');
+                darkModeToggle.checked = false;
+            }
+            
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('darkMode', 'true');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('darkMode', 'false');
+                }
+            });
+            
+            const form = document.getElementById('uploadForm');
+            const responseDiv = document.getElementById('response');
+            const fileInputWrapper = document.getElementById('fileInputWrapper');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const fileInput = document.getElementById('fileInput');
+            const thumbnailUrlInput = document.getElementById('thumbnailUrl');
+            const thumbnailFileInput = document.getElementById('thumbnailFile');
+            const thumbnailFileWrapper = document.getElementById('thumbnailFileWrapper');
+            const thumbnailFileNameDisplay = document.getElementById('thumbnailFileNameDisplay');
+            const thumbnailTypeUrl = document.getElementById('thumbnailTypeUrl');
+            const thumbnailTypeFile = document.getElementById('thumbnailTypeFile');
+            
+            fileInputWrapper.addEventListener('click', function() {  fileInput.click();  });
+            
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    fileNameDisplay.textContent = fileInput.files[0].name;
+                    fileNameDisplay.classList.remove('text-zinc-500');
+                    fileNameDisplay.classList.add('text-black', 'font-medium');
+                }
+            });
+            
+            thumbnailTypeUrl.addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('thumbnailUrlGroup').classList.remove('hidden');
+                    document.getElementById('thumbnailFileGroup').classList.add('hidden');
+                }
+            });
+            
+            thumbnailTypeFile.addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('thumbnailUrlGroup').classList.add('hidden');
+                    document.getElementById('thumbnailFileGroup').classList.remove('hidden');
+                }
+            });
+            
+            thumbnailFileWrapper.addEventListener('click', function() {  thumbnailFileInput.click();  });
+            
+            thumbnailFileInput.addEventListener('change', function() {
+                if (thumbnailFileInput.files.length > 0) {
+                    thumbnailFileNameDisplay.textContent = thumbnailFileInput.files[0].name;
+                    thumbnailFileNameDisplay.classList.remove('text-zinc-500');
+                    thumbnailFileNameDisplay.classList.add('text-black', 'font-medium');
+                }
+            });
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    responseDiv.innerHTML = `
+                        <div class="p-4 mt-4 bg-red-50 text-red-700 rounded-md">
+                            Please select a video file
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const submitBtn = document.getElementById('submitBtn');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Uploading...
+                `;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                if (thumbnailTypeUrl.checked) { formData.append('thumbnail', thumbnailUrlInput.value || 'https://cdn.nfp.is/av1/empty.png');
+                } else if (thumbnailTypeFile.checked && thumbnailFileInput.files.length > 0) { formData.append('thumbnail_file', thumbnailFileInput.files[0]);
+                } else { formData.append('thumbnail', 'https://cdn.nfp.is/av1/empty.png'); }
+                
+                formData.append('width', document.getElementById('videoWidth').value || '1280');
+                formData.append('height', document.getElementById('videoHeight').value || '720');
+                
+                try {
+                    const response = await fetch('/upload', { method: 'POST', body: formData });
+                    
+                    const result = await response.text();
+                    responseDiv.innerHTML = `
+                        <div class="p-4 mt-4 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-50 rounded-md">
+                            Upload successful! 
+                            <a href="${result}" class="underline font-medium" target="_blank">
+                                ${result}
+                            </a>
+                        </div>
+                    `;
+                } catch (error) {
+                    responseDiv.innerHTML = `
+                        <div class="p-4 mt-4 bg-red-50 text-red-700 rounded-md">
+                            Error uploading file: ${error.message}
+                        </div>
+                    `;
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

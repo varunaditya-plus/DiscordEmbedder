@@ -21,7 +21,7 @@
         }
     </script>
 </head>
-<body class="bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 flex flex-col gap-4 items-center justify-center min-h-screen p-5 font-sans transition-colors duration-200">
+<body class="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 flex flex-col gap-4 items-center justify-center min-h-screen p-5 font-sans transition-colors duration-200">
     <div class="max-w-3xl w-full bg-white dark:bg-zinc-800 rounded-lg shadow-md p-8 border border-zinc-200 dark:border-zinc-700">
         <div class="flex justify-between items-center mb-5">
             <h1 class="text-xl font-bold">Discord Embed</h1>
@@ -46,32 +46,9 @@
             <div class="bg-zinc-100 dark:bg-zinc-700 p-3 rounded-md font-mono break-all">{{ request.url }}</div>
         </div>
     </div>
-    <span>made w/ love by <a href="https://github.com/varunaditya-plus" class="text-red-400">varunaditya</a></span>
 
+    <span>made w/ love by <a href="https://github.com/varunaditya-plus" class="text-red-400">varunaditya</a> • open source at <a href="https://git.new/dscembed" class="text-blue-400">git.new/dscembed</a></span>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            
-            if (localStorage.getItem('darkMode') === 'true' || 
-                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                darkModeToggle.checked = true;
-            } else {
-                document.documentElement.classList.remove('dark');
-                darkModeToggle.checked = false;
-            }
-            
-            darkModeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    document.documentElement.classList.add('dark');
-                    localStorage.setItem('darkMode', 'true');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('darkMode', 'false');
-                }
-            });
-        });
-    </script>
+    <script src="static/themes.js"></script>
 </body>
 </html>

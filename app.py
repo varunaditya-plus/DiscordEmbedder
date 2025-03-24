@@ -208,4 +208,4 @@ def embed(embed_id):
     return render_template('embed.html', embed=embed_data)
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=False, host='0.0.0.0')
+    app.run(port=5001, debug=True, host='0.0.0.0')

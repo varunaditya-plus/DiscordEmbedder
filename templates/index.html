@@ -78,9 +78,18 @@
                 </div>
             </div>
             
-            <button id="submitBtn" type="submit" class="w-full bg-zinc-900 dark:bg-zinc-700 text-white font-medium py-2 px-4 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors">
-                Upload Video
-            </button>
+            <div class="mb-4">
+                <button id="submitBtn" type="submit" class="w-full bg-zinc-900 dark:bg-zinc-700 text-white font-medium py-2 px-4 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors">
+                    Upload Video
+                </button>
+            </div>
+            
+            <div id="progressContainer" class="hidden mt-4">
+                <div class="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2.5 mb-2">
+                    <div id="progressBar" class="bg-zinc-900 dark:bg-zinc-400 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="progressStatus" class="text-sm text-zinc-500 dark:text-zinc-400">Preparing upload...</p>
+            </div>
         </form>
         
         <div id="response" class="mt-4"></div>
@@ -183,34 +192,84 @@
                     Uploading...
                 `;
                 
+                const progressContainer = document.getElementById('progressContainer');
+                const progressBar = document.getElementById('progressBar');
+                const progressStatus = document.getElementById('progressStatus');
+                progressContainer.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                progressStatus.textContent = 'Preparing upload...';
+                
                 const formData = new FormData();
                 formData.append('file', file);
                 
-                if (thumbnailTypeUrl.checked) { formData.append('thumbnail', thumbnailUrlInput.value || 'https://cdn.nfp.is/av1/empty.png');
-                } else if (thumbnailTypeFile.checked && thumbnailFileInput.files.length > 0) { formData.append('thumbnail_file', thumbnailFileInput.files[0]);
-                } else { formData.append('thumbnail', 'https://cdn.nfp.is/av1/empty.png'); }
+                if (thumbnailTypeUrl.checked) { 
+                    formData.append('thumbnail', thumbnailUrlInput.value || 'https://cdn.nfp.is/av1/empty.png');
+                } else if (thumbnailTypeFile.checked && thumbnailFileInput.files.length > 0) { 
+                    formData.append('thumbnail_file', thumbnailFileInput.files[0]);
+                } else { 
+                    formData.append('thumbnail', 'https://cdn.nfp.is/av1/empty.png'); 
+                }
                 
                 formData.append('width', document.getElementById('videoWidth').value || '1280');
                 formData.append('height', document.getElementById('videoHeight').value || '720');
                 
                 try {
-                    const response = await fetch('/upload', { method: 'POST', body: formData });
+                    const response = await fetch('/upload', { 
+                        method: 'POST', 
+                        body: formData 
+                    });
                     
-                    const result = await response.text();
-                    responseDiv.innerHTML = `
-                        <div class="p-4 mt-4 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-50 rounded-md">
-                            Upload successful! 
-                            <a href="${result}" class="underline font-medium" target="_blank">
-                                ${result}
-                            </a>
-                        </div>
-                    `;
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    
+                    const processStream = async () => {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            
+                            const text = decoder.decode(value);
+                            const eventLines = text.split('\n\n');
+                            
+                            for (const line of eventLines) {
+                                if (line.startsWith('data: ')) {
+                                    try {
+                                        const data = JSON.parse(line.substring(6));
+                                        
+                                        // Update progress bar
+                                        progressBar.style.width = `${data.progress}%`;
+                                        
+                                        if (data.message) {
+                                            progressStatus.textContent = data.message;
+                                        }
+                                        
+                                        if (data.status === 'complete' && data.url) {
+                                            responseDiv.innerHTML = `
+                                                <div class="p-4 mt-4 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-50 rounded-md">
+                                                    Upload successful! 
+                                                    <a href="${data.url}" class="underline font-medium" target="_blank">
+                                                        ${data.url}
+                                                    </a>
+                                                </div>
+                                            `;
+                                            progressStatus.textContent = 'Upload complete!';
+                                        }
+                                    } catch (e) {
+                                        console.error('Error parsing event data:', e);
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    
+                    await processStream();
+                    
                 } catch (error) {
                     responseDiv.innerHTML = `
                         <div class="p-4 mt-4 bg-red-50 text-red-700 rounded-md">
                             Error uploading file: ${error.message}
                         </div>
                     `;
+                    progressStatus.textContent = 'Upload failed';
                 } finally {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnText;

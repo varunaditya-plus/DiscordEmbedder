@@ -166,7 +166,7 @@
                     thumbnailFileNameDisplay.classList.add('text-black', 'font-medium');
                 }
             });
-            
+                        
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
@@ -199,21 +199,51 @@
                 progressBar.style.width = '0%';
                 progressStatus.textContent = 'Preparing upload...';
                 
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                if (thumbnailTypeUrl.checked) { 
-                    formData.append('thumbnail', thumbnailUrlInput.value || 'https://cdn.nfp.is/av1/empty.png');
-                } else if (thumbnailTypeFile.checked && thumbnailFileInput.files.length > 0) { 
-                    formData.append('thumbnail_file', thumbnailFileInput.files[0]);
-                } else { 
-                    formData.append('thumbnail', 'https://cdn.nfp.is/av1/empty.png'); 
-                }
-                
-                formData.append('width', document.getElementById('videoWidth').value || '1280');
-                formData.append('height', document.getElementById('videoHeight').value || '720');
+                const CHUNK_SIZE = 30 * 1024 * 1024; // 30MB in bytes
+                let formData = new FormData();
+                let fileId = null;
                 
                 try {
+                    // if file larger than 30MB, upload in chunks
+                    if (file.size > CHUNK_SIZE) {
+                        progressStatus.textContent = 'Splitting file into chunks...';
+                        fileId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
+                        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+                        
+                        for (let i = 0; i < totalChunks; i++) {
+                            const start = i * CHUNK_SIZE;
+                            const end = Math.min(file.size, start + CHUNK_SIZE);
+                            const chunk = file.slice(start, end);
+                            
+                            const chunkFormData = new FormData();
+                            chunkFormData.append('chunk', chunk);
+                            
+                            progressStatus.textContent = `Uploading chunk ${i+1}/${totalChunks}...`;
+                            
+                            const response = await fetch(`/uploadchunk?fileid=${fileId}&chunk=${i}&total=${totalChunks}&filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(file.type)}`, {
+                                method: 'POST',
+                                body: chunkFormData
+                            });
+                            
+                            const result = await response.json();
+                            progressBar.style.width = `${Math.floor(result.progress / 2)}%`; // Use half the progress bar for chunks
+                        }
+                        
+                        formData.append('fileid', fileId);
+                    } else { formData.append('file', file); }
+                    
+                    if (thumbnailTypeUrl.checked) { 
+                        formData.append('thumbnail', thumbnailUrlInput.value || 'https://cdn.nfp.is/av1/empty.png');
+                    } else if (thumbnailTypeFile.checked && thumbnailFileInput.files.length > 0) { 
+                        formData.append('thumbnail_file', thumbnailFileInput.files[0]);
+                    } else { 
+                        formData.append('thumbnail', 'https://cdn.nfp.is/av1/empty.png'); 
+                    }
+                    
+                    formData.append('width', document.getElementById('videoWidth').value || '1280');
+                    formData.append('height', document.getElementById('videoHeight').value || '720');
+                    
+                    progressStatus.textContent = fileId ? 'Processing chunks...' : 'Uploading file...';
                     const response = await fetch('/upload', { 
                         method: 'POST', 
                         body: formData 
@@ -235,8 +265,13 @@
                                     try {
                                         const data = JSON.parse(line.substring(6));
                                         
+                                        let adjustedProgress = data.progress;
+                                        if (fileId && data.status !== 'complete') {
+                                            adjustedProgress = 20 + (data.progress / 1.25);
+                                        }
+                                        
                                         // Update progress bar
-                                        progressBar.style.width = `${data.progress}%`;
+                                        progressBar.style.width = `${adjustedProgress}%`;
                                         
                                         if (data.message) {
                                             progressStatus.textContent = data.message;
@@ -252,6 +287,7 @@
                                                 </div>
                                             `;
                                             progressStatus.textContent = 'Upload complete!';
+                                            progressBar.style.width = '100%';
                                         }
                                     } catch (e) {
                                         console.error('Error parsing event data:', e);
